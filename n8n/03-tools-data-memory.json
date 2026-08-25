@@ -1,0 +1,206 @@
+{
+  "name": "CCTP 481 - Lab 3 - Tools, Data and Memory (no code)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "38a19fe8-2c90-5817-ba8e-cdfb4384dc36",
+      "name": "When chat message received",
+      "webhookId": "2559f522-37e8-5577-89ca-92cd9ae900a4"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an assistant for a food truck in Edmonton's river valley. ALWAYS search the handbook before making a recommendation about opening, refunds, allergens or safety, and quote the policy you relied on. Never invent a policy. If no policy matches, say so and say you will check with the owner.",
+          "maxIterations": 10
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        240,
+        0
+      ],
+      "id": "4c5811e9-9696-595c-a7b7-9fae52fe8337",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        220
+      ],
+      "id": "312d8fb1-cd74-5f45-b6f6-abb0bd7c44b1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "fromInput",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        240,
+        220
+      ],
+      "id": "017a6762-c70b-5148-b6e3-050c346018ec",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=53.5461&longitude=-113.4938&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&timezone=America/Edmonton",
+        "options": {},
+        "toolDescription": "Get the CURRENT weather in Edmonton, Alberta. Use this for any question about weather, temperature, wind, rain or snow, or whether conditions are suitable for opening the food truck. Takes no input - it always reports Edmonton. Returns temperature_2m and apparent_temperature in Celsius, wind_speed_10m in km/h, and a WMO weather_code (95 or above means a thunderstorm)."
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        220
+      ],
+      "id": "5a192867-6492-55a4-b4b6-3448a1f493b4",
+      "name": "Get Weather"
+    },
+    {
+      "parameters": {
+        "name": "check_stock",
+        "description": "Look up how many units of a menu item are currently in the truck. Use this for questions about inventory, stock levels or availability.",
+        "language": "javaScript",
+        "jsCode": "// The same pretend inventory as notebook 02. In n8n the tool is\n// JavaScript, because n8n's AI nodes are LangChain's JS framework -\n// same idea as the Python @tool, different language.\nconst stock = {\n  \"cinnamon buns\": 4,\n  \"saskatoon berry pies\": 11,\n  \"bison chili\": 0,\n  \"cold brew\": 26,\n};\nconst item = String(query).toLowerCase().trim();\nif (!(item in stock)) {\n  return `No menu item called '${item}'. The menu is: ${Object.keys(stock).join(\", \")}`;\n}\nreturn `${item}: ${stock[item]} in the truck`;"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        600,
+        220
+      ],
+      "id": "b55596ee-9c2c-5a1b-99bc-6340e26d6784",
+      "name": "Check Stock"
+    },
+    {
+      "parameters": {
+        "name": "search_policies",
+        "description": "Search the food truck's staff handbook for official policy. Use this for any question about rules, opening, closing, weather closures, minimum stock, allergens, refunds, locations or propane safety. Pass the key words from the question as the query.",
+        "language": "javaScript",
+        "jsCode": "// The staff handbook from notebook 03, searched by keyword.\nconst policies = [\n  \"Cold and storms: we do not open when the temperature feels colder than -20C, or when Environment Canada has a thunderstorm warning in effect. Propane and high wind do not mix.\",\n  \"Minimum stock: we do not open a service with fewer than 6 cinnamon buns, because they are what most people queue for.\",\n  \"Allergens: cinnamon buns and saskatoon berry pies are made in a kitchen that handles nuts, dairy, wheat and eggs. We cannot guarantee any item is nut-free.\",\n  \"Refunds: customers may return any item within 24 hours of purchase for a full refund, no receipt required.\",\n  \"Locations: Hawrelak Park on weekends, Louise McKinney for downtown events, Old Strathcona Farmers' Market on Saturday mornings.\",\n  \"Propane: tanks are checked every morning before service and swapped when below one quarter. Never run a service on a tank below one quarter.\",\n];\nconst words = String(query).toLowerCase().split(/\\s+/).filter(w => w.length > 3);\nconst hits = policies.filter(p => words.some(w => p.toLowerCase().includes(w)));\nreturn hits.length\n  ? hits.map(h => \"- \" + h).join(\"\\n\")\n  : \"No matching policy found. Tell the user you will check with the owner.\";"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        780,
+        220
+      ],
+      "id": "ec6b159c-c896-5570-b921-1cbbf400d1e9",
+      "name": "Search Policies"
+    },
+    {
+      "parameters": {
+        "content": "## Lab 3 - Tools, Data and Memory\n\nThe twin of `03-tools-data-memory.ipynb`.\n\n**Ask these, in order:**\n\n1. `How many cinnamon buns do I have?`\n2. `And how about the cold brew?`  <- no subject. Memory makes this work.\n3. `Should I open at Hawrelak Park today? Tell me exactly what you based that on.`\n4. `Suppose it feels like -24C at Hawrelak with a thunderstorm warning and I have 3 cinnamon buns. Should I open? Quote the policy.`\n5. `What's our policy on dogs at the service window?`\n\n**Question 3 is the one that matters.** In Lab 2 the agent invented a threshold. Now it quotes your actual rule - no service below a -20C wind chill, and never under 6 cinnamon buns. The behaviour moved into a document you can edit.\n\n**Question 5 has no answer**, deliberately. A good agent says it will check with the owner. A bad one writes you a confident dog policy nobody approved.\n\n**Compare to the notebook:**\n- **Simple Memory** = `checkpointer=InMemorySaver()`; its Session ID is `thread_id`\n- **Search Policies** = the handbook tool. Keyword matching in both tracks, so the mechanism stays visible. Real semantic search needs embeddings - CCTP 482.\n\n**One thread, one customer.** Open **Simple Memory**. Its Session ID is the canvas's `thread_id`. Ask question 1, then change the Session ID and ask question 2 - the agent has no idea what you are talking about, because that is a different customer. Serving two people from one session is a real bug, and this is the setting that prevents it.\n\n**What this canvas does NOT do:** the notebook's Step 7, long-term memory - a fact about Sam that survives into a brand new conversation. Simple Memory forgets when the session ends. Carrying facts across sessions needs a store the workflow writes to and reads back, which is a database node, not a checkbox. Run the notebook for that one.",
+        "height": 780,
+        "width": 500
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -120
+      ],
+      "id": "135e334f-eaa6-5ec6-8855-b2ed20e2bf8e",
+      "name": "Sticky Note 111"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weather": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stock": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Policies": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "name": "CCTP 481 - Lab 1 - Hello, Model (no code)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "38a19fe8-2c90-5817-ba8e-cdfb4384dc36",
+      "name": "When chat message received",
+      "webhookId": "487dee28-6e11-52c5-b3d3-d091e988f6d1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        240,
+        0
+      ],
+      "id": "8018bc4c-dd92-5035-8b20-bcca8962ae0b",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        200
+      ],
+      "id": "312d8fb1-cd74-5f45-b6f6-abb0bd7c44b1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Lab 1 - Hello, Model\n\nThe twin of `01-hello-model.ipynb`.\n\n**Let's say you own a food truck** in Edmonton's river valley. Click **Chat** below and give the model two real jobs off your to-do list:\n\n1. `Write a friendly two-sentence description of our cinnamon buns for the menu board. Warm, not corporate.`\n2. `A customer says the bison chili they bought yesterday was cold by the time they got home. Draft a short, warm reply offering a refund.`\n\n**Both are good.** Not perfect, but a useful first draft in two seconds for jobs that would otherwise eat your evening. That is what a language model is for - writing, rephrasing, drafting, changing tone.\n\n**Now find the edge.** Ask it this:\n\n3. `What's the temperature in Edmonton right now, and how many cinnamon buns do I have left in the truck?`\n\nIt can answer neither half, for two different reasons: it **can't see the world** (no live data) and it **can't see your business** (no inventory). Notice it doesn't pretend - it tells you. That is the model behaving well.\n\nA **Basic LLM Chain** is a model call and nothing else: no tools, no memory.\n\n**Set up:** open the Google Gemini Chat Model node and pick your credential. See SETUP.md.\n\n**The point:** this is a chatbot, and a useful one. Lab 2 makes it an agent.",
+        "height": 620,
+        "width": 500
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -60
+      ],
+      "id": "cf69f7c7-4923-59b8-8fc2-e7bf362b9fd9",
+      "name": "Sticky Note 269"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

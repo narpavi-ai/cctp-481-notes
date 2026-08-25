@@ -1,0 +1,154 @@
+{
+  "name": "CCTP 481 - Lab 2 - Your First Agent (no code)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "38a19fe8-2c90-5817-ba8e-cdfb4384dc36",
+      "name": "When chat message received",
+      "webhookId": "720451a1-ebfb-5420-828e-10d8a62e08b2"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an assistant for a food truck in Edmonton's river valley. Use your tools rather than guessing, and never invent inventory numbers or weather.",
+          "maxIterations": 10
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        240,
+        0
+      ],
+      "id": "4c5811e9-9696-595c-a7b7-9fae52fe8337",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        220
+      ],
+      "id": "312d8fb1-cd74-5f45-b6f6-abb0bd7c44b1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=53.5461&longitude=-113.4938&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&timezone=America/Edmonton",
+        "options": {},
+        "toolDescription": "Get the CURRENT weather in Edmonton, Alberta. Use this for any question about weather, temperature, wind, rain or snow, or whether conditions are suitable for opening the food truck. Takes no input - it always reports Edmonton. Returns temperature_2m and apparent_temperature in Celsius, wind_speed_10m in km/h, and a WMO weather_code (95 or above means a thunderstorm)."
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        220
+      ],
+      "id": "5a192867-6492-55a4-b4b6-3448a1f493b4",
+      "name": "Get Weather"
+    },
+    {
+      "parameters": {
+        "name": "check_stock",
+        "description": "Look up how many units of a menu item are currently in the truck. Use this whenever someone asks about inventory, stock levels, or whether something is available to sell. The item name should be lowercase and plural, for example \"cinnamon buns\".",
+        "language": "javaScript",
+        "jsCode": "// The same pretend inventory as notebook 02. In n8n the tool is\n// JavaScript, because n8n's AI nodes are LangChain's JS framework -\n// same idea as the Python @tool, different language.\nconst stock = {\n  \"cinnamon buns\": 4,\n  \"saskatoon berry pies\": 11,\n  \"bison chili\": 0,\n  \"cold brew\": 26,\n};\nconst item = String(query).toLowerCase().trim();\nif (!(item in stock)) {\n  return `No menu item called '${item}'. The menu is: ${Object.keys(stock).join(\", \")}`;\n}\nreturn `${item}: ${stock[item]} in the truck`;"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        440,
+        220
+      ],
+      "id": "b55596ee-9c2c-5a1b-99bc-6340e26d6784",
+      "name": "Check Stock"
+    },
+    {
+      "parameters": {
+        "content": "## Lab 2 - Your First Agent\n\nThe twin of `02-first-agent.ipynb`.\n\n**Ask it the same three questions as Lab 1:**\n\n1. `What's the weather in Edmonton right now?`\n2. `How many cinnamon buns do I have?`\n3. `Should I open at Hawrelak Park today? Tell me what you're basing that on.`\n\nTwo of the three now work, because two tools are wired underneath the agent. **Get Weather** reaches the world - it calls Open-Meteo, live, no API key. **Check Stock** reaches your business.\n\n**Now read question 3 sceptically.** It has real weather and a real stock count, and then it tells you whether to open - on a threshold it made up. Nothing in this workflow says what temperature is too cold. Lab 3 gives it your handbook.\n\n**Compare to the notebook:**\n- `create_agent(model=..., tools=[...])` = this node plus its sub-nodes\n- the tool's docstring = the **Description** field on the tool node\n- `recursion_limit` = **Max Iterations** in the agent's options\n\n**Open the execution log** after a run - that is the ReAct trace the notebook prints with `show_trace()`.",
+        "height": 640,
+        "width": 500
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -540,
+        -100
+      ],
+      "id": "6f8f702a-8b5a-5e1f-85af-63bcbd30bd2f",
+      "name": "Sticky Note 496"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weather": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stock": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
